@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cyn — video portfolio</title>
+    <meta name="description" content="Short-form video portfolio — the videos, the numbers, and the thinking behind them." />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0b'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='30' fill='%23f4f4f5' text-anchor='middle'%3Ec.%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/home.css" />
+    <link rel="stylesheet" href="/src/styles/viewer.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- page transition wipe panels -->
+    <div id="wipe" aria-hidden="true">
+      <span class="wipe-panel"></span>
+      <span class="wipe-panel"></span>
+      <span class="wipe-panel"></span>
+    </div>
+
+    <!-- custom cursor -->
+    <div id="cursor-dot" aria-hidden="true"></div>
+    <div id="cursor-ring" aria-hidden="true"><span id="cursor-label"></span></div>
+
+    <noscript>This portfolio needs JavaScript to play.</noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
