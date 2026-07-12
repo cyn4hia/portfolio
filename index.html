@@ -22,16 +22,25 @@
   <body>
     <div id="app"></div>
 
-    <!-- page transition wipe panels -->
+    <!-- page transition: the meteor-storm wipe, drawn by src/stars.js -->
     <div id="wipe" aria-hidden="true">
-      <span class="wipe-panel"></span>
-      <span class="wipe-panel"></span>
-      <span class="wipe-panel"></span>
+      <canvas id="storm"></canvas>
+      <div id="wipe-slate" class="mono"></div>
     </div>
 
-    <!-- custom cursor -->
-    <div id="cursor-dot" aria-hidden="true"></div>
-    <div id="cursor-ring" aria-hidden="true"><span id="cursor-label"></span></div>
+    <!-- custom cursor: a themed arrow pointer, tip at the pointer position -->
+    <div id="cursor" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M2 2 L2 19 L6.7 14.8 L9.6 21 L12.6 19.6 L9.7 13.6 L15.5 13.2 Z"
+          fill="#f4f4f5"
+          stroke="#0a0a0b"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <span id="cursor-label"></span>
+    </div>
 
     <noscript>This portfolio needs JavaScript to play.</noscript>
     <script type="module" src="/src/main.js"></script>

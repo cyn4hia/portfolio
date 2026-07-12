@@ -30,6 +30,8 @@ export const icons = {
   vertical: svg(`<rect x="8" y="4" width="8" height="16" rx="1.5"/>`),
   horizontal: svg(`<rect x="4" y="8" width="16" height="8" rx="1.5"/>`),
   check: svg(`<path d="m5 12.5 4.5 4.5L19 7.5"/>`),
+  x: svg(`<path d="m6 6 12 12M18 6 6 18"/>`),
+  user: svg(`<circle cx="12" cy="8.2" r="3.6"/><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/>`),
   expand: svg(
     `<path d="M9 3.5H3.5V9M15 3.5h5.5V9M9 20.5H3.5V15M15 20.5h5.5V15"/>`
   ),

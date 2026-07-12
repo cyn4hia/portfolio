@@ -292,12 +292,13 @@
   border-radius: 3px;
 }
 .phone::before {
-  /* volume keys */
+  /* two distinct volume keys — the slider capsule spans exactly 21%..41.5%
+     to mirror them, so keep these numbers in sync with .vol-ctl */
   left: -3px;
-  top: 22%;
+  top: 21%;
   width: 3px;
-  height: 15%;
-  box-shadow: 0 calc(var(--phone-h) * 0.11) 0 #3d3d46;
+  height: 9%;
+  box-shadow: 0 calc(var(--phone-h) * 0.115) 0 #3d3d46;
 }
 .phone::after {
   /* power */
@@ -339,6 +340,58 @@
   background: linear-gradient(115deg, rgba(255, 255, 255, 0.07) 0%, transparent 28%);
 }
 
+/* ios-style volume capsule beside the phone's volume keys — its bounds
+   match the two keys (21% -> 41.5% = key top to key bottom) exactly */
+.vol-ctl {
+  position: absolute;
+  left: calc(var(--phone-h) * -0.052);
+  top: 21%;
+  height: 20.5%;
+  width: calc(var(--phone-h) * 0.024);
+  z-index: 5;
+  opacity: 0.55;
+  transition: opacity 0.3s ease;
+  touch-action: none;
+}
+.vol-ctl:hover,
+.vol-ctl.dragging {
+  opacity: 1;
+}
+.vol-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(26, 26, 31, 0.82);
+  border: 1px solid rgba(244, 244, 245, 0.14);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  transition: transform 0.25s var(--ease-out);
+}
+/* grows under the pointer, the way the ios slider does */
+.vol-ctl:hover .vol-track,
+.vol-ctl.dragging .vol-track {
+  transform: scaleX(1.35);
+}
+.vol-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  background: #f4f4f5;
+  transition: height 0.15s ease;
+}
+.vol-icon {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(var(--phone-h) * 0.026);
+  height: calc(var(--phone-h) * 0.026);
+  color: var(--fg-dim);
+}
+
 /* screen layers (for video-to-video slide) */
 .layer {
   position: absolute;
@@ -373,7 +426,19 @@
   transform: translate(-50%, -50%) rotate(90deg);
 }
 
-/* every video is 16:9 — letterboxed band in portrait, full bleed in landscape */
+/* every video is 16:9 — letterboxed band in portrait, full bleed in landscape.
+   the wrap matches the media box but doesn't clip, so the pill can sit below */
+.media-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.viewer.landscape .media-wrap {
+  width: auto;
+  height: 100%;
+}
 .media {
   position: relative;
   width: 100%;
@@ -390,12 +455,21 @@
   height: 100%;
   object-fit: cover;
 }
+/* vertical footage owns the whole screen — no letterbox, no rotation */
+.media-wrap.v-full,
+.media-wrap.v-full .media {
+  height: 100%;
+}
+.media-wrap.v-full .media {
+  aspect-ratio: auto;
+}
 
-/* tiktok's "watch in full screen" pill, pinned to the video band */
+/* tiktok's "watch in full screen" pill — floats just below the video band;
+   in landscape "below" is off the phone, so it tucks inside the bottom edge */
 .fs-pill {
   position: absolute;
   left: 50%;
-  bottom: 7px;
+  top: calc(100% + 10px);
   transform: translateX(-50%);
   z-index: 6;
   display: inline-flex;
@@ -421,6 +495,10 @@
   animation: none;
 }
 .fs-pill .icon { width: 12px; height: 12px; }
+.viewer.landscape .fs-pill {
+  top: auto;
+  bottom: 10px;
+}
 @keyframes pill-breathe {
   0%, 100% { border-color: rgba(244, 244, 245, 0.22); }
   50% { border-color: rgba(244, 244, 245, 0.5); }
@@ -443,7 +521,6 @@
 .static-inner {
   text-align: center;
   padding: 20px;
-  transform: translateY(-10px); /* clear the full-screen pill below */
 }
 .static-inner .icon {
   width: 20px;
@@ -663,6 +740,14 @@
   letter-spacing: 0.08em;
   color: var(--fg-faint);
 }
+.frame-ori {
+  position: absolute;
+  top: 9px;
+  right: 42px;
+  width: 13px;
+  height: 13px;
+  color: var(--fg-faint);
+}
 
 .strip-keys {
   flex: none;
@@ -731,4 +816,6 @@
   /* icons only, except the notes toggle */
   .btn-ghost .bl { display: none; }
   .hud-toggle .bl { display: inline; }
+  /* phones have hardware volume — the capsule would clip the viewport edge */
+  .vol-ctl { display: none; }
 }

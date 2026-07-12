@@ -1,5 +1,5 @@
 import { icons } from "../icons.js";
-import { el, fmtApprox, countUp, typeText, formatDate, clamp, pad2, reducedMotion } from "../utils.js";
+import { el, fmtApprox, countUp, typeText, formatDate, clamp, pad2, reducedMotion, assetUrl } from "../utils.js";
 import { site, visibleAccounts } from "../data/accounts.js";
 
 // deliberately just the two headline numbers — counts drift too fast to
@@ -8,6 +8,10 @@ const STAT_LABELS = {
   views: "views",
   likes: "likes",
 };
+
+// horizontal videos letterbox + earn the full-screen phone rotation;
+// vertical ones fill the screen natively (unspecified = vertical)
+const isHorizontal = (v) => v.orientation === "horizontal";
 
 export function renderViewer(root, { account, startIndex, onBack, onOpenAccount }) {
   const view = el("div", "view viewer");
@@ -20,16 +24,14 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
 
   let idx = clamp(startIndex || 0, 0, account.videos.length - 1);
   let landscape = false;
-  let muted = true;
+  let muted = false; // sound stays on; setVideo falls back if autoplay blocks it
+  let volume = 1; // persists across videos; the phone-side slider drives it
   let switching = false;
   let currentLayer = null;
   let currentVideo = null;
 
-  // per-stat max across the account, for the meter bars
-  const maxStat = {};
-  for (const key of Object.keys(STAT_LABELS)) {
-    maxStat[key] = Math.max(1, ...account.videos.map((v) => v.stats[key] || 0));
-  }
+  // fixed meter scales: a full bar means 100k views / 50k likes
+  const STAT_SCALE = { views: 100_000, likes: 50_000 };
 
   /* ---------------------------------------------------------- header */
   const head = el("div", "stage-head");
@@ -59,12 +61,23 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   rotateBtn.addEventListener("click", () => setLandscape(!landscape, true));
   head.append(rotateBtn);
 
-  const muteBtn = el("button", "btn-ghost", `<span class="icon">${icons.soundOff}</span>`);
+  const muteBtn = el("button", "btn-ghost", `<span class="icon">${icons.soundOn}</span>`);
   muteBtn.dataset.cursor = "link";
+  // one sync point for every sound surface: header button, phone-side
+  // slider fill + glyph, and the live video element
+  const syncSound = () => {
+    muteBtn.querySelector(".icon").innerHTML = muted ? icons.soundOff : icons.soundOn;
+    volIcon.innerHTML = muted ? icons.soundOff : icons.soundOn;
+    volFill.style.height = `${(muted ? 0 : volume) * 100}%`;
+    if (currentVideo) {
+      currentVideo.muted = muted;
+      currentVideo.volume = volume;
+    }
+  };
   muteBtn.addEventListener("click", () => {
     muted = !muted;
-    muteBtn.querySelector(".icon").innerHTML = muted ? icons.soundOff : icons.soundOn;
-    if (currentVideo) currentVideo.muted = muted;
+    if (!muted && volume === 0) volume = 0.5; // unmuting from zero needs a level
+    syncSound();
   });
   head.append(muteBtn);
 
@@ -125,6 +138,57 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   const progress = el("div", "progress", "<i></i>");
   screen.append(island, playFlash, progress);
   phone.append(screen);
+
+  // ios-style volume capsule, hugging the phone's volume keys; it lives on
+  // the phone so it rotates along in landscape, like real hardware
+  const volCtl = el("div", "vol-ctl");
+  volCtl.dataset.cursor = "drag";
+  volCtl.dataset.cursorLabel = "volume";
+  const volTrack = el("div", "vol-track", `<i class="vol-fill"></i>`);
+  const volIcon = el("span", "vol-icon icon", icons.soundOn);
+  volCtl.append(volTrack, volIcon);
+  phone.append(volCtl);
+  const volFill = volTrack.querySelector(".vol-fill");
+
+  // the track's long axis is vertical in portrait and horizontal once the
+  // phone rotates; read the level off whichever axis it's on (max volume is
+  // the end nearest the phone's top)
+  const volFromEvent = (e) => {
+    const r = volTrack.getBoundingClientRect();
+    const f = landscape
+      ? 1 - (e.clientX - r.left) / (r.width || 1)
+      : 1 - (e.clientY - r.top) / (r.height || 1);
+    volume = Math.round(clamp(f, 0, 1) * 20) / 20;
+    muted = volume === 0;
+    syncSound();
+  };
+  volCtl.addEventListener("pointerdown", (e) => {
+    e.stopPropagation(); // the phone underneath is draggable
+    volCtl.classList.add("dragging");
+    volFromEvent(e);
+    try {
+      volCtl.setPointerCapture(e.pointerId);
+    } catch {
+      /* synthetic events have no capturable pointer */
+    }
+  });
+  volCtl.addEventListener("pointermove", (e) => {
+    if (volCtl.classList.contains("dragging")) volFromEvent(e);
+  });
+  const volEnd = () => volCtl.classList.remove("dragging");
+  volCtl.addEventListener("pointerup", volEnd);
+  volCtl.addEventListener("pointercancel", volEnd);
+  volCtl.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // don't advance the reel
+      volume = clamp(volume + (e.deltaY < 0 ? 0.05 : -0.05), 0, 1);
+      muted = volume === 0;
+      syncSound();
+    },
+    { passive: false }
+  );
   flip.append(phone);
   rig.append(flip);
   scene.append(rig);
@@ -140,6 +204,7 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     f.dataset.cursor = "link";
     f.innerHTML = `
       <span class="frame-num">${pad2(i + 1)}</span>
+      <span class="frame-ori icon">${isHorizontal(v) ? icons.horizontal : icons.vertical}</span>
       <span class="frame-dur">${v.duration}</span>
       <span class="frame-title">${v.title}</span>`;
     f.addEventListener("click", () => setVideo(i));
@@ -158,19 +223,27 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
 
   /* ------------------------------------------------------ screen layers */
   function buildLayer(video) {
+    const horizontal = isHorizontal(video);
     const layer = el("div", "layer");
     const fit = el("div", "fit");
-    // 16:9 letterbox band inside the vertical screen; fills it in landscape
+    // horizontal: a 16:9 letterbox band inside the vertical screen (fills it
+    // in landscape) — the wrap exists so the full-screen pill can hang below
+    // the video without being clipped by the media box's overflow.
+    // vertical: the media owns the whole screen, tiktok-native
+    const wrap = el("div", `media-wrap${horizontal ? "" : " v-full"}`);
     const media = el("div", "media");
 
     if (video.src) {
       const vid = document.createElement("video");
-      vid.src = video.src;
-      if (video.poster) vid.poster = video.poster;
+      vid.src = assetUrl(video.src);
+      if (video.poster) vid.poster = assetUrl(video.poster);
       vid.loop = true;
       vid.muted = muted;
+      vid.volume = volume;
       vid.playsInline = true;
       vid.preload = "metadata";
+      vid.disablePictureInPicture = true;
+      vid.setAttribute("controlslist", "nodownload noremoteplayback");
       media.append(vid);
       layer._video = vid;
     } else {
@@ -184,19 +257,22 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
       media.append(ph);
     }
 
-    // tiktok's "watch in full screen" pill, pinned to the video itself —
+    // tiktok's "watch in full screen" pill — horizontal footage only;
     // this is the control that turns the phone
-    const pill = el(
-      "button",
-      "fs-pill",
-      `<span class="icon">${icons.expand}</span><span class="pl">full screen</span>`
-    );
-    pill.dataset.cursor = "link";
-    pill.addEventListener("pointerdown", (e) => e.stopPropagation());
-    pill.addEventListener("click", () => setLandscape(!landscape, true));
-    media.append(pill);
-
-    fit.append(media);
+    if (horizontal) {
+      const pill = el(
+        "button",
+        "fs-pill",
+        `<span class="icon">${icons.expand}</span><span class="pl">full screen</span>`
+      );
+      pill.dataset.cursor = "link";
+      pill.addEventListener("pointerdown", (e) => e.stopPropagation());
+      pill.addEventListener("click", () => setLandscape(!landscape, true));
+      wrap.append(media, pill);
+    } else {
+      wrap.append(media);
+    }
+    fit.append(wrap);
     layer.append(fit);
 
     // tiktok-style overlay (portrait only)
@@ -222,6 +298,11 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     const video = account.videos[next];
     idx = next;
 
+    // vertical footage has no landscape mode: turn the phone back if
+    // needed, and put away the full-screen control
+    if (!isHorizontal(video) && landscape) setLandscape(false, true);
+    rotateBtn.style.display = isHorizontal(video) ? "" : "none";
+
     // build + animate screen layer
     const incoming = buildLayer(video);
     const outgoing = currentLayer;
@@ -245,7 +326,16 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
 
     if (currentVideo) {
       currentVideo.muted = muted;
-      currentVideo.play().catch(() => {});
+      currentVideo.volume = volume;
+      // browsers can refuse sound-on autoplay before any interaction —
+      // fall back to muted playback instead of a frozen first frame
+      const vid = currentVideo;
+      vid.play().catch(() => {
+        if (muted || vid !== currentVideo) return;
+        muted = true;
+        syncSound();
+        vid.play().catch(() => {});
+      });
       on(currentVideo, "timeupdate", () => {
         if (currentVideo.duration) {
           progress.firstElementChild.style.width = `${(currentVideo.currentTime / currentVideo.duration) * 100}%`;
@@ -270,7 +360,7 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     for (const key of Object.keys(STAT_LABELS)) {
       const value = video.stats[key] || 0;
       cancels.push(countUp(statRows[key].num, value, { format: fmtApprox }));
-      statRows[key].bar.style.width = `${Math.max(4, (value / maxStat[key]) * 100)}%`;
+      statRows[key].bar.style.width = `${clamp((value / STAT_SCALE[key]) * 100, 4, 100)}%`;
     }
 
     cancels.push(typeText(noteHook, video.hook, { speed: 18 }));
@@ -282,7 +372,7 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     });
     noteTags.innerHTML = "";
     for (const tag of video.tags || []) noteTags.append(el("span", "chip", tag));
-    noteMeta.innerHTML = `<span>posted ${formatDate(video.postedAt)}</span><span>${video.duration}</span><span>16:9</span>`;
+    noteMeta.innerHTML = `<span>posted ${formatDate(video.postedAt)}</span><span>${video.duration}</span><span>${isHorizontal(video) ? "16:9" : "9:16"}</span>`;
   }
 
   /* ------------------------------------------------- rotate / landscape */
@@ -379,7 +469,8 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   on(window, "keydown", (e) => {
     if (e.key === "ArrowRight" || e.key === "ArrowDown") setVideo(idx + 1);
     else if (e.key === "ArrowLeft" || e.key === "ArrowUp") setVideo(idx - 1);
-    else if (e.key === "r" || e.key === "R") setLandscape(!landscape, true);
+    else if ((e.key === "r" || e.key === "R") && isHorizontal(account.videos[idx]))
+      setLandscape(!landscape, true);
     else if (e.key === "m" || e.key === "M") muteBtn.click();
     else if (e.key === " ") {
       e.preventDefault();

@@ -53,5 +53,14 @@ window.addEventListener("hashchange", () => {
   wipe(() => render(route));
 });
 
+// deter casual saving: no right-click menu on footage, covers, or photos
+// (determined users can always capture what a browser plays — this only
+// raises the effort bar)
+document.addEventListener("contextmenu", (e) => {
+  if (e.target.closest("video, .media, .poster-img, .gtile-poster, .avatar, .about-avatar")) {
+    e.preventDefault();
+  }
+});
+
 initCursor();
 render(parseHash());

@@ -98,58 +98,64 @@ svg {
   cursor: none !important;
 }
 
-#cursor-dot,
-#cursor-ring {
+/* an arrow pointer drawn in-theme; the path's tip sits at (2,2), so the
+   svg is nudged back by that much to put the tip on the pointer position */
+#cursor {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 400;
   pointer-events: none;
   opacity: 0;
-  mix-blend-mode: difference;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.2s ease;
 }
-#cursor-dot.on,
-#cursor-ring.on {
+#cursor.on {
   opacity: 1;
 }
-#cursor-dot::after {
-  content: "";
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #fff;
+#cursor svg {
+  width: 22px;
+  height: 22px;
+  margin: -2px 0 0 -2px;
+  overflow: visible;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+  transform-origin: 2px 2px;
+  transition: transform 0.16s var(--ease-out);
 }
-#cursor-ring::after {
-  content: "";
-  position: absolute;
-  top: -17px;
-  left: -17px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #fff;
-  border-radius: 50%;
-  transition: transform 0.3s var(--ease-out), opacity 0.3s ease;
+/* over anything interactive the arrow perks up */
+#cursor[data-mode="link"] svg,
+#cursor[data-mode="play"] svg,
+#cursor[data-mode="drag"] svg {
+  transform: scale(1.22) rotate(-10deg);
 }
-#cursor-ring[data-mode="link"]::after { transform: scale(1.5); }
-#cursor-ring[data-mode="drag"]::after,
-#cursor-ring[data-mode="play"]::after { transform: scale(2.1); }
-#cursor-ring.down::after { transform: scale(0.7); }
+#cursor.down svg {
+  transform: scale(0.85);
+}
+/* caption chip beside the arrow (open / play / drag / locked) */
 #cursor-label {
   position: absolute;
-  transform: translate(-50%, -50%);
+  left: 17px;
+  top: 21px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--fg);
+  color: var(--bg);
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #fff;
   white-space: nowrap;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.18s ease, transform 0.18s var(--ease-out);
+}
+#cursor.lbl #cursor-label {
+  opacity: 1;
+  transform: none;
 }
 
 /* -------------------------------------------------------------------- wipe */
+/* the meteor-storm transition — stars.js draws everything on #storm */
 #wipe {
   position: fixed;
   inset: 0;
@@ -160,26 +166,36 @@ svg {
 #wipe.in {
   display: block;
 }
-.wipe-panel {
+#storm {
   position: absolute;
   inset: 0;
-  transform: translateY(-101%);
+  width: 100%;
+  height: 100%;
 }
-.wipe-panel:nth-child(1) { background: #26262c; }
-.wipe-panel:nth-child(2) { background: #141418; }
-.wipe-panel:nth-child(3) { background: #060607; }
-#wipe.in .wipe-panel {
-  transition: transform 0.5s var(--ease-out);
-  transform: translateY(0);
+#wipe-slate {
+  position: absolute;
+  left: 28px;
+  bottom: 28px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
-#wipe.in .wipe-panel:nth-child(2) { transition-delay: 0.07s; }
-#wipe.in .wipe-panel:nth-child(3) { transition-delay: 0.14s; }
-#wipe.in.out .wipe-panel {
-  transform: translateY(101%);
-  transition-delay: 0.14s;
+#wipe-slate.show {
+  opacity: 1;
 }
-#wipe.in.out .wipe-panel:nth-child(2) { transition-delay: 0.07s; }
-#wipe.in.out .wipe-panel:nth-child(3) { transition-delay: 0s; }
+
+/* the homepage starfield — one per home view, created by stars.js */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
 
 /* ----------------------------------------------------------------- shared  */
 .mono {
@@ -217,6 +233,8 @@ svg {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
   }
 }

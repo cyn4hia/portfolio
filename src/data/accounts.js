@@ -12,8 +12,16 @@
 //                     Until a src exists, the phone shows a static
 //                     "awaiting footage" screen so the layout still works.
 //
-// Videos are treated as horizontal (16:9): they play letterboxed in the
-// vertical phone, and the on-video "full screen" button rotates the phone.
+// Orientation:  every video declares `orientation: "horizontal" | "vertical"`
+//               (missing = vertical).
+//               horizontal — plays letterboxed 16:9 in the vertical phone,
+//               with the on-video "full screen" button that turns the phone.
+//               vertical   — fills the phone screen like a native TikTok;
+//               no letterbox, no rotation.
+//
+// Profile picture:  set an account's `avatar` to an image path (drop the
+//                   file in public/images/) — null falls back to the
+//                   monogram circle.
 //
 // Stats are deliberately loose — store a ballpark number and the site
 // displays it rounded down with a "+" (102400 -> "100K+"), so you never
@@ -23,85 +31,109 @@
 export const site = {
   name: "cyn",
   title: "cyn — video portfolio",
-  tagline: "short-form video, deliberately made.",
+  tagline: "after effects design and creation",
   // shown top-right of the homepage
   status: "open to collabs",
+  // the self-introduction card — appears once on your first hover of the
+  // account window; after that only the "about me" button toggles it
+  about: {
+    label: "file://about-me",
+    avatar: "/videos/main/me.jpg",
+    title: "hey. im cindy",
+    lines: [
+      "Content creator since 2021.",
+      "All my accounts were grown from the ground up, 0 following, 0 followers from the very start. But by understanding my audience, I was able to create content for millions of people.",
+      "I love watching TikTok which is why I create!",
+    ],
+    facts: [
+      { label: "based in", value: "boston, ma" },
+      { label: "mail", value: "zhou.cy@northeastern.edu" },
+      { label: "github", value: "@cyn4hia" },
+    ]
+  },
 };
 
 export const accounts = [
   {
     id: "main",
-    handle: "@cyn.mp4", // TODO: replace with your real handle
-    name: "main account",
+    handle: "@soft",
+    name: "Editing Account",
+    avatar: "/videos/main/pfp.jpeg", 
     hidden: false,
-    bio: "the flagship. trends translated, hooks tested, lessons logged.",
+    bio: "after effects design and creation",
     stats: {
-      followers: 1240,
-      likes: 48200,
-      views: 312000,
+      followers: 1000,
+      likes: 190000,
+      views: 20000000,
     },
-    highlights: ["100K+ views on a single video", "1K+ followers organic", "0 paid promotion"],
-    brands: ["brand one", "brand two", "brand three"], // TODO: real brand names
+    highlights: ["Motion graphics", "20 million views in 1 month", "Diverse content"],
+    brands: ["Anthropic"],
     videos: [
       {
-        id: "main-01",
-        title: "the hook experiment",
-        src: null, // e.g. "videos/main/hook-experiment.mp4"
-        poster: null,
-        duration: "0:21",
-        postedAt: "2026-03-14",
-        stats: { views: 102400, likes: 8400 },
-        hook: "rewrote the first 1.5 seconds four times before posting.",
+        id: "fable-5-ad",
+        title: "Fable 5 Relaunch Campaign",
+        src: "/videos/main/post-freefable.MP4",
+        orientation: "horizontal",
+        poster: "/videos/main/fable5-cover.png",
+        duration: "0:13",
+        postedAt: "2026-06-14",
+        stats: { views: 19000000, likes: 40000 },
+        hook: "Quick Edit Turned Viral",
         thoughts: [
-          "The whole video was built backwards from the hook. I scripted the payoff first, then kept cutting the intro until nothing before the tension remained.",
-          "Retention graph confirmed it: the fourth hook held 78% at the 3-second mark versus 41% on the first draft. Same footage, different first frame.",
-          "Takeaway I keep reusing: the hook is not the start of the video, it is the reason the rest gets watched.",
+          "Originally the video was created after Fable 5 was disabled to encourage more discussion about the model.",
+          "Anthropic reached out for a paid partnership, requesting to promote as an AD for their relaunch",
+          "Reached various different audiences, leading a lot of users to test out the model and talk about their work",
         ],
-        tags: ["hook-testing", "retention", "editing"],
+        tags: ["partnership", "ai", "mograph"],
       },
       {
-        id: "main-02",
-        title: "trend, but slower",
-        src: null,
-        poster: null,
-        duration: "0:34",
-        postedAt: "2026-04-02",
-        stats: { views: 68400, likes: 5100 },
-        hook: "took a fast trend and cut it at half speed on purpose.",
+        id: "claude-mog",
+        title: "Controversial 'Best' AI Model",
+        src: "/videos/main/claude-mog_1.mp4",
+        orientation: "horizontal",
+        poster: "/videos/main/mog-cover.png",
+        duration: "0:17",
+        postedAt: "2026-06-04",
+        stats: { views: 1000000, likes: 100000 },
+        hook: "OBVIOUSLY Claude is the best",
         thoughts: [
-          "Everyone was racing this sound. I bet the opposite direction: slower pacing reads as confidence when the whole feed is frantic.",
-          "Comments skewed toward 'why is this so satisfying' — which told me the pacing itself became the content.",
+          "First time making content about AI after spending a few days posting anime edits",
+          "Only reached 10k views at the beginning, but absolutely skyrocked pre-Fable 5 release",
+          "Receivied a lot of comments and engagement due to various opinions",
         ],
-        tags: ["trend-remix", "pacing"],
+        tags: ["opinions", "claude"],
       },
       {
-        id: "main-03",
-        title: "the widescreen cut",
-        src: null,
-        poster: null,
-        duration: "0:48",
-        postedAt: "2026-05-11",
-        stats: { views: 41200, likes: 3300 },
-        hook: "framed for full screen — the turn of the phone is the point.",
+        id: "claude-names",
+        title: "The Art of Anthropic Model Naming",
+        src: "/videos/main/post-claudenaming.mp4",
+        orientation: "horizontal",
+        poster: "/videos/main/name-cover.png",
+        duration: "0:24",
+        postedAt: "2026-06-21",
+        stats: { views: 170000, likes: 20000 },
+        hook: "Meanings, not just numbers",
         thoughts: [
-          "Horizontal on TikTok forces an interaction: the viewer has to go full screen, which is a tiny commitment. Tiny commitments raise watch-through.",
-          "The framing gave me room for a two-subject composition that vertical crops always killed. Worth the reach penalty.",
+          "Unlike many other AI models, all of the Claude model names represented by literary termns based on their capabilities and functions.",
+          "A beautiful visualizer to show the depth to these names",
+          "Quite an overlooked topic! A lot of people commented that they only just learned from watching this video",
         ],
-        tags: ["16:9", "composition", "format-test"],
+        tags: ["claude", "art", "aesthetics"],
       },
       {
-        id: "main-04",
-        title: "post-mortem: the flop",
-        src: null,
-        poster: null,
+        id: "haikyuu",
+        title: "Aboslute Motion",
+        src: "/videos/main/haikyuu.mp4",
+        orientation: "horizontal",
+        poster: "/videos/main/haikyuu-cover.png",
         duration: "0:27",
         postedAt: "2026-06-05",
-        stats: { views: 3100, likes: 240 },
-        hook: "kept the flop in the portfolio on purpose.",
+        stats: { views: 15000, likes: 3000 },
+        hook: "Movement on the Court",
         thoughts: [
-          "This one died at 3K views and it earns its slot here. The concept was strong but I buried the payoff behind context nobody asked for.",
-          "Diagnosis: 9 seconds of setup before any visual change. The algorithm never got a completion signal to work with.",
-          "Every account section here keeps one flop. Showing the analysis matters more than hiding the number.",
+          "Second time I tried a motion graphics video. ",
+          "A lot of movement and cutouts that kept the video flowing, while incoorporating sounds from anime to match the beat.",
+          "Received a lot of positive feedback from fans!",
         ],
         tags: ["post-mortem", "honesty", "analytics"],
       },
@@ -110,14 +142,15 @@ export const accounts = [
 
   {
     id: "alt",
-    handle: "@cyn.offcut", // TODO: replace with your real handle
-    name: "alt account",
-    hidden: false,
+    handle: "@vin", // TODO: replace with your real handle
+    name: "Quiet Living Account",
+    avatar: null, // e.g. "images/vin-avatar.png"
+    hidden: true,
     bio: "the lab. weirder ideas, rougher edits, faster feedback loops.",
     stats: {
-      followers: 480,
-      likes: 12600,
-      views: 88000,
+      followers: 1100,
+      likes: 40000,
+      views: 350000,
     },
     highlights: ["3 formats prototyped", "48h idea-to-post loop"],
     videos: [
@@ -125,6 +158,7 @@ export const accounts = [
         id: "alt-01",
         title: "one-take rule",
         src: null,
+        orientation: "horizontal",
         poster: null,
         duration: "0:18",
         postedAt: "2026-04-20",
@@ -140,6 +174,7 @@ export const accounts = [
         id: "alt-02",
         title: "caption-first draft",
         src: null,
+        orientation: "horizontal",
         poster: null,
         duration: "0:26",
         postedAt: "2026-05-18",
@@ -155,6 +190,7 @@ export const accounts = [
         id: "alt-03",
         title: "landscape b-roll study",
         src: null,
+        orientation: "horizontal",
         poster: null,
         duration: "0:52",
         postedAt: "2026-06-14",
@@ -173,6 +209,7 @@ export const accounts = [
     id: "vault",
     handle: "@cyn.vault",
     name: "third account",
+    avatar: null,
     hidden: true, // flip to false when you're ready to show it
     bio: "not public yet.",
     stats: { followers: 0, likes: 0, views: 0 },

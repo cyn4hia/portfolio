@@ -62,6 +62,10 @@ export function typeText(node, text, { speed = 28 } = {}) {
   };
 }
 
+// GitHub Pages serves the site from a sub-path, so asset URLs must stay
+// relative — tolerate a leading "/" in the data file
+export const assetUrl = (p) => p.replace(/^\//, "");
+
 export function formatDate(iso) {
   const d = new Date(iso + "T00:00:00");
   return d
