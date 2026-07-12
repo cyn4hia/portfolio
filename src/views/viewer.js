@@ -52,14 +52,18 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   }
   head.append(headTabs);
 
+  // right-side cluster; the tabs float dead-center between back and this
+  const headRight = el("div", "head-right");
+  head.append(headRight);
+
   const hudToggle = el("button", "btn-ghost hud-toggle", `<span class="icon">${icons.notes}</span><span class="bl">notes</span>`);
   hudToggle.addEventListener("click", () => hudWrap.classList.toggle("open"));
-  head.append(hudToggle);
+  headRight.append(hudToggle);
 
   const rotateBtn = el("button", "btn-ghost", `<span class="icon">${icons.expand}</span><span class="bl">full screen</span>`);
   rotateBtn.dataset.cursor = "link";
   rotateBtn.addEventListener("click", () => setLandscape(!landscape, true));
-  head.append(rotateBtn);
+  headRight.append(rotateBtn);
 
   const muteBtn = el("button", "btn-ghost", `<span class="icon">${icons.soundOn}</span>`);
   muteBtn.dataset.cursor = "link";
@@ -79,10 +83,10 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     if (!muted && volume === 0) volume = 0.5; // unmuting from zero needs a level
     syncSound();
   });
-  head.append(muteBtn);
+  headRight.append(muteBtn);
 
   const headIdx = el("div", "head-idx");
-  head.append(headIdx);
+  headRight.append(headIdx);
   view.append(head);
 
   /* ----------------------------------------------------------- stage */
@@ -246,6 +250,34 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
       vid.setAttribute("controlslist", "nodownload noremoteplayback");
       media.append(vid);
       layer._video = vid;
+
+      // slow-connection signal: shows only when the network keeps the video
+      // from playing (with a grace delay so fast loads never flash it)
+      const buf = el(
+        "div",
+        "buffering",
+        `<span class="buf-chip"><i class="buf-spin"></i><span class="buf-l">slow connection — buffering</span></span>`
+      );
+      media.append(buf);
+      const bufSoon = () => {
+        clearTimeout(layer._bufT);
+        layer._bufT = setTimeout(() => buf.classList.add("show"), 450);
+      };
+      const bufHide = () => {
+        clearTimeout(layer._bufT);
+        buf.classList.remove("show");
+      };
+      vid.addEventListener("waiting", bufSoon);
+      vid.addEventListener("stalled", bufSoon);
+      vid.addEventListener("playing", bufHide);
+      vid.addEventListener("canplaythrough", bufHide);
+      vid.addEventListener("error", () => {
+        clearTimeout(layer._bufT);
+        buf.querySelector(".buf-spin").remove();
+        buf.querySelector(".buf-l").textContent = "video failed to load — check connection";
+        buf.classList.add("show");
+      });
+      bufSoon(); // a slow first load counts too
     } else {
       const ph = el("div", "static");
       ph.innerHTML = `
@@ -311,6 +343,7 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     currentVideo = incoming._video || null;
     screen.insertBefore(incoming, playFlash);
 
+    if (outgoing) clearTimeout(outgoing._bufT);
     if (outgoing && !reducedMotion && !instant) {
       switching = true;
       incoming.classList.add(`in-${dir}`);

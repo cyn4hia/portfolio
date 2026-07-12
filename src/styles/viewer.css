@@ -56,10 +56,21 @@
   50% { border-color: var(--fg-dim); color: var(--fg); }
 }
 
+/* the account pill(s) sit at the true center of the header, regardless of
+   how many buttons flank them — one public account = one centered pill */
 .head-tabs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   gap: 6px;
-  margin: 0 auto;
+}
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
 }
 .head-tab {
   font-family: var(--font-mono);
@@ -615,6 +626,49 @@
   color: rgba(244, 244, 245, 0.85);
 }
 
+/* slow-connection signal — lives on the media box, upright in any rotation */
+.buffering {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.buffering.show {
+  opacity: 1;
+}
+.buf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 244, 245, 0.16);
+  background: rgba(8, 8, 10, 0.78);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+.buf-spin {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid rgba(244, 244, 245, 0.2);
+  border-top-color: #f4f4f5;
+  animation: buf-spin 0.9s linear infinite;
+}
+@keyframes buf-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* play/pause flash glyph */
 .play-flash {
   position: absolute;
@@ -807,15 +861,14 @@
   .hud-wrap.open { transform: none; }
   .rail { width: 100%; }
   .hud-toggle { display: inline-flex; }
-  .head-tabs { display: none; }
+  .head-right { gap: 8px; }
+  /* icon-only buttons below desktop width — the centered pill owns the middle */
+  .btn-ghost .bl { display: none; }
   .strip-keys { display: none; }
   .frame { width: 96px; height: 56px; }
 }
 
 @media (max-width: 560px) {
-  /* icons only, except the notes toggle */
-  .btn-ghost .bl { display: none; }
-  .hud-toggle .bl { display: inline; }
-  /* phones have hardware volume — the capsule would clip the viewport edge */
-  .vol-ctl { display: none; }
+  /* the index yields to the centered account pill */
+  .head-idx { display: none; }
 }
