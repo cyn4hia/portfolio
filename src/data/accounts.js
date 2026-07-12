@@ -29,8 +29,8 @@
 // ---------------------------------------------------------------------------
 
 export const site = {
-  name: "cyn",
-  title: "cyn — video portfolio",
+  name: "cindy",
+  title: "cindy's content creation portfolio",
   tagline: "after effects design and creation",
   // shown top-right of the homepage
   status: "open to collabs",
