@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+*.local
+
+# raw content never goes to github — videos, covers, and photos stay local
+# and ship only when you deploy from this machine (see README "Deploying")
+public/videos/
+public/images/

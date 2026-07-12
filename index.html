@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cyn — video portfolio</title>
+    <meta name="description" content="Short-form video portfolio — the videos, the numbers, and the thinking behind them." />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0b'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='30' fill='%23f4f4f5' text-anchor='middle'%3Ec.%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="./assets/index--BbyPD4g.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Cj-RNBkh.css">
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- page transition: the meteor-storm wipe, drawn by src/stars.js -->
+    <div id="wipe" aria-hidden="true">
+      <canvas id="storm"></canvas>
+      <div id="wipe-slate" class="mono"></div>
+    </div>
+
+    <!-- custom cursor: a themed arrow pointer, tip at the pointer position -->
+    <div id="cursor" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M2 2 L2 19 L6.7 14.8 L9.6 21 L12.6 19.6 L9.7 13.6 L15.5 13.2 Z"
+          fill="#f4f4f5"
+          stroke="#0a0a0b"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <span id="cursor-label"></span>
+    </div>
+
+    <noscript>This portfolio needs JavaScript to play.</noscript>
+  </body>
+</html>
