@@ -26,6 +26,18 @@
 // Stats are deliberately loose — store a ballpark number and the site
 // displays it rounded down with a "+" (102400 -> "100K+"), so you never
 // have to chase exact counts.
+//
+// Hiding stats:  set `statsHidden: true` on any video and the viewer's
+//                performance card reads "hidden" instead of the numbers.
+//
+// Collections:  an account may carry a `collections` array — content
+//               categories (e.g. "motion", "anime", "ai") shown ONLY on that
+//               account's profile as a row of buttons below the main grid;
+//               each button opens that category's reel. Every collection keeps
+//               its footage in its own folder (public/videos/<account-id>/
+//               <collection-id>/) so the content types never mix. Collection
+//               clips are title-only: no hook, no field notes — just the work
+//               and its numbers.
 // ---------------------------------------------------------------------------
 
 export const site = {
@@ -62,9 +74,9 @@ export const accounts = [
     hidden: false,
     bio: "after effects design and creation",
     stats: {
-      followers: 1000,
-      likes: 190000,
-      views: 20000000,
+      followers: 1500,
+      likes: 230000,
+      views: 40000000,
     },
     highlights: ["Motion graphics", "20 million views in 1 month", "Diverse content"],
     brands: ["Anthropic"],
@@ -77,7 +89,7 @@ export const accounts = [
         poster: "/videos/main/fable5-cover.png",
         duration: "0:13",
         postedAt: "2026-06-14",
-        stats: { views: 19000000, likes: 40000 },
+        stats: { views: 38000000, likes: 60000 },
         hook: "Quick Edit Turned Viral",
         thoughts: [
           "Originally the video was created after Fable 5 was disabled to encourage more discussion about the model.",
@@ -94,7 +106,7 @@ export const accounts = [
         poster: "/videos/main/mog-cover.png",
         duration: "0:17",
         postedAt: "2026-06-04",
-        stats: { views: 1000000, likes: 100000 },
+        stats: { views: 1100000, likes: 120000 },
         hook: "OBVIOUSLY Claude is the best",
         thoughts: [
           "First time making content about AI after spending a few days posting anime edits",
@@ -104,6 +116,23 @@ export const accounts = [
         tags: ["opinions", "claude"],
       },
       {
+        id: "weathering",
+        title: "Weathering Edit",
+        src: "/videos/main/weathering-hoodie-post.mp4",
+        orientation: "horizontal",
+        poster: "/videos/main/weathering-hoodie.png",
+        duration: "0:12",
+        postedAt: "2026-07-28",
+        stats: { views: 300000, likes: 70000 },
+        hook: "Weathering With You x Hoodie",
+        thoughts: [
+          "Brought back memories of one of my favorite animes",
+          "Fast paced sad intro stormy intro into a happy, sunny ending. Perfectly describes the anime.",
+          "Reached a lot of new viewers, leading to a rise in popularity for my anime related videos.",
+        ],
+        tags: ["post-mortem", "honesty", "analytics"],
+      },
+      {
         id: "claude-names",
         title: "The Art of Anthropic Model Naming",
         src: "/videos/main/post-claudenaming.mp4",
@@ -111,7 +140,7 @@ export const accounts = [
         poster: "/videos/main/name-cover.png",
         duration: "0:24",
         postedAt: "2026-06-21",
-        stats: { views: 170000, likes: 20000 },
+        stats: { views: 200000, likes: 20000 },
         hook: "Meanings, not just numbers",
         thoughts: [
           "Unlike many other AI models, all of the Claude model names represented by literary termns based on their capabilities and functions.",
@@ -120,22 +149,177 @@ export const accounts = [
         ],
         tags: ["claude", "art", "aesthetics"],
       },
+    ],
+    // two content lanes shown only on this account's profile — each its own
+    // folder under public/videos/main/ so motion + anime footage never mix.
+    // title-only by design (no hook / thoughts); `statsHidden` blanks a clip's
+    // performance card. drop files at the path shown in each `src`.
+    collections: [
       {
-        id: "haikyuu",
-        title: "Aboslute Motion",
-        src: "/videos/main/haikyuu.mp4",
-        orientation: "horizontal",
-        poster: "/videos/main/haikyuu-cover.png",
-        duration: "0:27",
-        postedAt: "2026-06-05",
-        stats: { views: 15000, likes: 3000 },
-        hook: "Movement on the Court",
-        thoughts: [
-          "Second time I tried a motion graphics video. ",
-          "A lot of movement and cutouts that kept the video flowing, while incoorporating sounds from anime to match the beat.",
-          "Received a lot of positive feedback from fans!",
+        id: "motion",
+        label: "motion",
+        blurb: "movement with meaning",
+        videos: [
+          {
+            id: "fable5 ui",
+            title: "Fable 5 UI Redesign",
+            src: "/videos/main/motion/fable5ui-post.mp4", 
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:07",
+            postedAt: "2026-07-01",
+            stats: { views: 12900, likes: null},
+            tags: ["mograph", "ui design"],
+          },
+          {
+            id: "claude splash",
+            title: "Claude Splash",
+            src: "/videos/main/motion/claude-splash.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:10",
+            postedAt: "2026-07-17",
+            stats: { views: 12800, likes: 1200 },
+            tags: ["smooth", "claude"],
+          },
+          {
+            id: "nvidia fashion",
+            title: "Nvidia Fashion",
+            src: "/videos/main/motion/nvidia-fashion.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:12",
+            postedAt: "2026-06-13",
+            stats: { views: 9100, likes: null },
+            tags: ["lyrical", "nvidia"],
+          },
+          {
+            id: "clawd-buddy",
+            title: "Clawd Coding Buddy",
+            src: "/videos/main/motion/clawd-buddy.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:15",
+            postedAt: "2026-06-23",
+            stats: { views: 11000, likes: null },
+            tags: ["fun", "clawd"],
+          },
         ],
-        tags: ["post-mortem", "honesty", "analytics"],
+      },
+      {
+        id: "anime",
+        label: "anime",
+        blurb: "all genres of anime, clips of my favorites",
+        videos: [
+          {
+            id: "lover-boy",
+            title: "Lover Boy Triology",
+            src: "public/videos/main/anime/loverboy-post.MP4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:15",
+            postedAt: "2026-08-08",
+            stats: { views: 77000, likes: 17000 },
+            tags: ["manga", "animation"],
+          },
+          {
+            id: "legendary-yourname",
+            title: "Legendary Lovers",
+            src: "public/videos/main/anime/legendary-yourname.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:07",
+            postedAt: "2026-06-01",
+            statsHidden: true,
+            stats: { views: 27000, likes: 4800 },
+            tags: ["red string", "lovers"],
+          },
+          {
+            id: "haikyuu-motion",
+            title: "Left Right Left Right",
+            src: "public/videos/main/anime/haikyuu.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:09",
+            postedAt: "2026-06-10",
+            stats: { views: 23000, likes: 4200 },
+            tags: ["anime", "mograph"],
+          },
+          {
+            id: "ari-reze",
+            title: "Reze in Motion",
+            src: "public/videos/main/anime/ari-reze.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:10",
+            postedAt: "2026-06-07",
+            stats: { views: 17000, likes: 2700 },
+            tags: ["anime", "mograph"],
+          },
+          {
+            id: "weathering-colors",
+            title: "Weathering With You x Colors",
+            src: "public/videos/main/anime/weathering-colors-post.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:14",
+            postedAt: "2026-08-03",
+            statsHidden: true,
+            stats: { views: 30000, likes: 5400 },
+            tags: ["red string", "lovers"],
+          },
+        ],
+      },
+      {
+        id: "ai talk",
+        label: "ai talk",
+        blurb: "From LLMs to new tech, you get it all",
+        videos: [
+          {
+            id: "opus5-release",
+            title: "Opus 5 Release",
+            src: "public/videos/main/ai/opus5-release-post.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:10",
+            postedAt: "2026-07-26",
+            stats: { views: 60000, likes: 6500 },
+            tags: ["opus5", "release"],
+          },
+          {
+            id: "fives",
+            title: "5s",
+            src: "public/videos/main/ai/opus5.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:06",
+            postedAt: "2026-07-16",
+            stats: { views: 43000, likes: 3000 },
+            tags: ["leak", "opus5"],
+          },
+          {
+            id: "fable5-ani",
+            title: "Introducing Fable 5",
+            src: "public/videos/main/ai/fable5-ani.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:07",
+            postedAt: "2026-06-16",
+            stats: { views: 23000, likes: 1900 },
+            tags: ["graphic", "fable5"],
+          },
+          {
+            id: "opus5-leak",
+            title: "Opus5 Coming Soon",
+            src: "public/videos/main/ai/opus5-leak.mp4",
+            orientation: "horizontal",
+            poster: null,
+            duration: "0:21",
+            postedAt: "2026-07-22",
+            stats: { views: 47000, likes: 3300 },
+            tags: ["graphic", "opus5"],
+          },
+        ],
       },
     ],
   },
@@ -221,3 +405,5 @@ export const accounts = [
 export const visibleAccounts = () => accounts.filter((a) => !a.hidden);
 export const hiddenCount = () => accounts.filter((a) => a.hidden).length;
 export const getAccount = (id) => accounts.find((a) => a.id === id && !a.hidden) || null;
+export const getCollection = (accountId, collectionId) =>
+  getAccount(accountId)?.collections?.find((c) => c.id === collectionId) || null;

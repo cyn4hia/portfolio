@@ -194,6 +194,27 @@
   color: var(--fg-faint);
 }
 
+/* stats withheld: the rows + footer collapse, the "hidden" note takes over */
+.stats-hidden-note {
+  display: none;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.stats-hidden-note .icon {
+  width: 13px;
+  height: 13px;
+  color: var(--fg-faint);
+}
+.rail-card.stats-hidden .srow,
+.rail-card.stats-hidden .rail-foot { display: none; }
+.rail-card.stats-hidden .stats-hidden-note { display: flex; }
+
 /* notes card */
 .note-hook {
   font-size: 16px;
@@ -860,6 +881,8 @@
   }
   .hud-wrap.open { transform: none; }
   .rail { width: 100%; }
+  /* the desktop centering spacer has no place in the stacked sheet */
+  .rail-spacer { display: none; }
   .hud-toggle { display: inline-flex; }
   .head-right { gap: 8px; }
   /* icon-only buttons below desktop width — the centered pill owns the middle */

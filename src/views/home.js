@@ -4,13 +4,8 @@ import { site, visibleAccounts, hiddenCount } from "../data/accounts.js";
 import { createSky } from "../stars.js";
 
 /* ----------------------------------------------------- seeded generatives */
-// poster constellations and tile sparklines must draw the same shape on
-// every visit, so they're seeded from stable ids instead of Math.random
-function hash32(str) {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
+// the grid tiles' sparklines must draw the same curve on every visit, so
+// they're seeded from a stable number instead of Math.random
 function mulberry32(seed) {
   let a = seed >>> 0;
   return () => {
@@ -19,44 +14,6 @@ function mulberry32(seed) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-// a tiny star map: 5-9 nodes joined nearest-neighbour; edges carry their own
-// dasharray so they can draw themselves in on hover with zero JS
-function constellation(id) {
-  const rnd = mulberry32(hash32(id));
-  const n = 5 + Math.floor(rnd() * 5);
-  const pts = Array.from({ length: n }, () => ({ x: 14 + rnd() * 132, y: 12 + rnd() * 66 }));
-  const order = [0];
-  const left = pts.map((_, i) => i).slice(1);
-  while (left.length) {
-    const c = pts[order[order.length - 1]];
-    let bi = 0;
-    let bd = Infinity;
-    left.forEach((pi, k) => {
-      const d = (pts[pi].x - c.x) ** 2 + (pts[pi].y - c.y) ** 2;
-      if (d < bd) {
-        bd = d;
-        bi = k;
-      }
-    });
-    order.push(left.splice(bi, 1)[0]);
-  }
-  let edges = "";
-  for (let i = 1; i < order.length; i++) {
-    const a = pts[order[i - 1]];
-    const b = pts[order[i]];
-    const len = Math.hypot(b.x - a.x, b.y - a.y).toFixed(1);
-    edges += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke-dasharray="${len}" stroke-dashoffset="${len}" style="transition-delay:${i * 55}ms"/>`;
-  }
-  const gid = `cg${hash32(id).toString(36)}`;
-  const hero = Math.floor(rnd() * n);
-  let nodes = "";
-  pts.forEach((p, i) => {
-    if (i === hero) nodes += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="url(#${gid})"/>`;
-    nodes += `<circle class="cnode" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(0.7 + rnd() * 0.5).toFixed(2)}" opacity="${(0.5 + rnd() * 0.3).toFixed(2)}" style="animation-delay:${(rnd() * 1.6).toFixed(2)}s"/>`;
-  });
-  return `<svg class="constellation" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><radialGradient id="${gid}"><stop offset="0" stop-color="rgba(244,244,245,0.45)"/><stop offset="1" stop-color="rgba(244,244,245,0)"/></radialGradient></defs><g class="cedges">${edges}</g>${nodes}</svg>`;
 }
 
 // 12-point declining retention curve for the window's grid tiles
@@ -71,17 +28,12 @@ function sparkline(seed) {
   return `<svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polyline vector-effect="non-scaling-stroke" points="${pts.join(" ")}"/></svg>`;
 }
 
-const monthYear = (iso) =>
-  new Date(iso + "T00:00:00")
-    .toLocaleDateString("en-US", { month: "short", year: "numeric" })
-    .toLowerCase();
-
 // module-scoped so it survives route changes: the about card introduces
 // itself on the first hover of the session only — coming back from the
 // viewer must not re-trigger it
 let aboutAutoShown = false;
 
-export function renderHome(root, { onOpenAccount, initialAccountId }) {
+export function renderHome(root, { onOpenAccount, onOpenCollection, initialAccountId }) {
   const view = el("div", "view home");
   const profileCancels = []; // reset on every tab switch
   const viewCancels = []; // reset only on unmount
@@ -107,7 +59,7 @@ export function renderHome(root, { onOpenAccount, initialAccountId }) {
   aboutBtn.dataset.cursor = "link";
   tr.append(aboutBtn);
   fold.append(tr);
-  const hint = el("div", "home-hint", `select a tab — scroll for the reel<span class="chev"></span>`);
+  const hint = el("div", "home-hint", `select a tab — scroll for more<span class="chev"></span>`);
   fold.append(hint);
 
   // the window
@@ -235,19 +187,8 @@ export function renderHome(root, { onOpenAccount, initialAccountId }) {
       profile.append(chips);
     }
 
-    if (acc.brands?.length) {
-      const brands = el("div", "profile-brands");
-      brands.append(el("span", "brands-label", "worked with"));
-      const row = el("div", "brands-row");
-      acc.brands.forEach((b, i) => {
-        if (i > 0) row.append(el("span", "brand-sep", "/"));
-        row.append(el("span", "brand", b));
-      });
-      brands.append(row);
-      profile.append(brands);
-    }
-
-    // actions
+    // actions — the brands credit sits beside the button on desktop and
+    // stacks above it on mobile (css flips the order)
     const actions = el("div", "profile-actions");
     const open = el(
       "button",
@@ -258,7 +199,17 @@ export function renderHome(root, { onOpenAccount, initialAccountId }) {
     open.dataset.cursorLabel = "open";
     open.addEventListener("click", () => zoomOut(acc.id, 0));
     actions.append(open);
-    actions.append(el("span", "profile-count", `${acc.videos.length} videos on file`));
+    if (acc.brands?.length) {
+      const brands = el("div", "profile-brands");
+      brands.append(el("span", "brands-label", "worked with"));
+      const row = el("div", "brands-row");
+      acc.brands.forEach((b, i) => {
+        if (i > 0) row.append(el("span", "brand-sep", "/"));
+        row.append(el("span", "brand", b));
+      });
+      brands.append(row);
+      actions.append(brands);
+    }
     profile.append(actions);
 
     // grid of videos
@@ -281,6 +232,29 @@ export function renderHome(root, { onOpenAccount, initialAccountId }) {
       grid.append(tile);
     });
     profile.append(grid);
+
+    // content buttons — this account only. one per collection (motion /
+    // anime / ai), sitting as a compact row under the featured grid; each
+    // opens that category's own reel in the viewer
+    if (acc.collections?.length) {
+      const cols = el("div", "collections");
+      acc.collections.forEach((col, ci) => {
+        const btn = el("button", "collection-btn");
+        btn.dataset.col = col.id;
+        btn.dataset.cursor = "link";
+        btn.dataset.cursorLabel = "open";
+        if (ceremony) btn.style.animationDelay = `${(1.3 + ci * 0.08).toFixed(3)}s`;
+        btn.innerHTML = `
+          <span class="cbtn-name">${col.label}</span>
+          <span class="cbtn-meta mono"><span class="icon">${icons.play}</span>${pad2(col.videos.length)} clips</span>`;
+        btn.addEventListener("click", () => {
+          win.classList.add("zooming");
+          onOpenCollection(acc.id, col.id, 0);
+        });
+        cols.append(btn);
+      });
+      profile.append(cols);
+    }
 
     body.append(profile);
   }
@@ -329,15 +303,17 @@ export function renderHome(root, { onOpenAccount, initialAccountId }) {
 
     let pinned = false;
 
-    // the card mirrors the profile window: same height, vertically aligned
-    // with its center (the sheet layout on small screens sizes itself)
+    // the card keeps its own content height and simply centers on the
+    // window's vertical midline — it no longer stretches to match the window,
+    // so a taller profile doesn't drag it out of shape (sheet layout on small
+    // screens sizes itself). offset geometry ignores the tilt transform, so
+    // the midline reading stays true
     const sizeAbout = () => {
       if (innerWidth > 720) {
-        // offset geometry ignores the tilt transform, so the card's top
-        // tracks the window's real top edge — both panels sit level
         const foldTop = win.offsetParent ? win.offsetParent.getBoundingClientRect().top : 0;
-        aboutCard.style.height = `${win.offsetHeight}px`;
-        aboutCard.style.top = `${foldTop + win.offsetTop}px`;
+        const winMid = foldTop + win.offsetTop + win.offsetHeight / 2;
+        aboutCard.style.height = "";
+        aboutCard.style.top = `${winMid - aboutCard.offsetHeight / 2}px`;
       } else {
         aboutCard.style.height = "";
         aboutCard.style.top = "";
@@ -394,137 +370,9 @@ export function renderHome(root, { onOpenAccount, initialAccountId }) {
     });
   }
 
-  /* ----------------------------------------------- fold two: the reel wall */
-  // every project as a seeded constellation poster — the work is browsable
-  // without ever entering the viewer, and each card deep-links into it
-  const wall = el("section", "wall");
-  const works = [];
-  for (const acc of accountsList) acc.videos.forEach((v, i) => works.push({ acc, v, i }));
+  view.append(fold);
 
-  const wallHead = el("div", "wall-head");
-  wallHead.append(el("div", "wall-eyebrow mono", `the reel — ${pad2(works.length)} works on file`));
-  wallHead.append(el("h2", "wall-title", "selected works"));
-  const grid = el("div", "wall-grid");
-  if (accountsList.length > 1) {
-    const filters = el("div", "wall-filters");
-    const defs = [{ id: "all", label: "all" }, ...accountsList.map((a) => ({ id: a.id, label: a.handle }))];
-    defs.forEach((f, i) => {
-      const chip = el("button", `chip fchip${i === 0 ? " active" : ""}`, f.label);
-      chip.dataset.cursor = "link";
-      chip.addEventListener("click", () => {
-        filters.querySelectorAll(".fchip").forEach((c) => c.classList.toggle("active", c === chip));
-        grid.querySelectorAll(".poster").forEach((c) =>
-          c.classList.toggle("hide", f.id !== "all" && c.dataset.acc !== f.id)
-        );
-      });
-      filters.append(chip);
-    });
-    wallHead.append(filters);
-  }
-
-  works.forEach(({ acc, v, i }, wi) => {
-    const card = el("button", "poster");
-    card.dataset.acc = acc.id;
-    card.dataset.cursor = "play";
-    card.dataset.cursorLabel = "watch";
-    if (ceremonial) card.style.animationDelay = `${((wi % 20) * 0.07).toFixed(2)}s`;
-
-    // cover art is the card face when a poster exists; a real mp4 still
-    // upgrades the slot to a muted hover preview on top. footage-less,
-    // poster-less cards stay title-sequence constellations
-    if (v.poster) card.classList.add("has-cover");
-    const cover = v.poster
-      ? `<img class="poster-img" src="${assetUrl(v.poster)}" alt="" loading="lazy" />`
-      : "";
-    const media = v.src
-      ? `${cover}<video class="poster-media" src="${assetUrl(v.src)}" muted loop playsinline preload="none" disablepictureinpicture controlslist="nodownload noremoteplayback"></video><span class="poster-badge mono">preview</span>`
-      : cover || `<span class="poster-static"></span>`;
-
-    card.innerHTML = `
-      ${media}
-      ${v.poster ? `<span class="poster-scrim"></span>` : ""}
-      <span class="poster-num" aria-hidden="true">${pad2(wi + 1)}</span>
-      ${constellation(v.id)}
-      <span class="poster-rule mono">${acc.handle}</span>
-      <span class="poster-credit">
-        <span class="pc-title">${v.title}</span>
-        <span class="pc-line mono">dir. ${site.name} — ${v.duration} — <b>${fmtApprox(v.stats.views)} views</b> — ${monthYear(v.postedAt)}</span>
-      </span>`;
-
-    if (v.src) {
-      card.classList.add("has-video");
-      const vid = card.querySelector("video");
-      card.addEventListener("pointerenter", () => {
-        if (reducedMotion) return;
-        vid.currentTime = 0;
-        vid.play().catch(() => {});
-      });
-      card.addEventListener("pointerleave", () => vid.pause());
-    }
-
-    card.addEventListener("click", () => {
-      if (!ceremonial) return onOpenAccount(acc.id, i);
-      card.classList.add("stamp"); // rubber-stamp invert, then the storm
-      setTimeout(() => onOpenAccount(acc.id, i), 140);
-    });
-    grid.append(card);
-  });
-
-  if (hiddenCount() > 0) {
-    const vault = el(
-      "button",
-      "poster vault",
-      `<span class="icon">${icons.lock}</span><span class="vault-l mono">vault — not yet public</span>`
-    );
-    vault.dataset.acc = "vault";
-    vault.dataset.cursor = "link";
-    vault.dataset.cursorLabel = "locked";
-    if (ceremonial) vault.style.animationDelay = `${((works.length % 20) * 0.07).toFixed(2)}s`;
-    vault.addEventListener("click", () => {
-      vault.classList.remove("deny");
-      // release the retired/staggered inline animation so the shake can play
-      vault.style.animation = "";
-      vault.style.animationDelay = "";
-      void vault.offsetWidth;
-      vault.classList.add("deny");
-    });
-    grid.append(vault);
-  }
-
-  // once a card's entrance (or shake) has played, retire it — otherwise
-  // display:none from a filter switch would replay the whole stagger
-  grid.addEventListener("animationend", (e) => {
-    if (e.pseudoElement) return; // micro-meteor ::after
-    const p = e.target.closest(".poster");
-    if (!p) return;
-    if (e.animationName === "deny") p.classList.remove("deny");
-    p.style.animation = "none";
-    p.style.animationDelay = "";
-  });
-
-  wall.append(wallHead, grid);
-
-  // cards stagger in when the first poster row actually approaches the
-  // viewport — the wall head peeking above the fold must not trigger it
-  if (ceremonial && "IntersectionObserver" in window) {
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          wall.classList.add("on");
-          io.disconnect();
-        }
-      },
-      { threshold: 0, rootMargin: "0px 0px -15% 0px" }
-    );
-    io.observe(grid);
-    viewCancels.push(() => io.disconnect());
-  } else {
-    wall.classList.add("on");
-  }
-
-  view.append(fold, wall);
-
-  // the hint hands over to the wall once you start scrolling
+  // the hint fades once you start scrolling into the profile's lower content
   const onScroll = () => hint.classList.toggle("gone", view.scrollTop > 80);
   view.addEventListener("scroll", onScroll, { passive: true });
   viewCancels.push(() => view.removeEventListener("scroll", onScroll));

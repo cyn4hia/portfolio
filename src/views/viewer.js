@@ -13,7 +13,7 @@ const STAT_LABELS = {
 // vertical ones fill the screen natively (unspecified = vertical)
 const isHorizontal = (v) => v.orientation === "horizontal";
 
-export function renderViewer(root, { account, startIndex, onBack, onOpenAccount }) {
+export function renderViewer(root, { account, collection = null, startIndex, onBack, onOpenAccount }) {
   const view = el("div", "view viewer");
   const cancels = [];
   const listeners = [];
@@ -22,7 +22,12 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     listeners.push(() => target.removeEventListener(type, fn, opts));
   };
 
-  let idx = clamp(startIndex || 0, 0, account.videos.length - 1);
+  // a collection (motion / anime) plays as its own reel — title-only, so its
+  // clips carry no field notes; a normal account keeps its full notes rail
+  const videos = collection ? collection.videos : account.videos;
+  const showNotes = !collection;
+
+  let idx = clamp(startIndex || 0, 0, videos.length - 1);
   let landscape = false;
   let muted = false; // sound stays on; setVideo falls back if autoplay blocks it
   let volume = 1; // persists across videos; the phone-side slider drives it
@@ -30,8 +35,12 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   let currentLayer = null;
   let currentVideo = null;
 
-  // fixed meter scales: a full bar means 100k views / 50k likes
-  const STAT_SCALE = { views: 100_000, likes: 50_000 };
+  // fixed meter scales: a full bar means 100k views / 50k likes on the main
+  // reel; a collection's numbers run much smaller, so its meters top out at
+  // 20k views / 3k likes
+  const STAT_SCALE = collection
+    ? { views: 20_000, likes: 3_000 }
+    : { views: 100_000, likes: 50_000 };
 
   /* ---------------------------------------------------------- header */
   const head = el("div", "stage-head");
@@ -56,7 +65,15 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   const headRight = el("div", "head-right");
   head.append(headRight);
 
-  const hudToggle = el("button", "btn-ghost hud-toggle", `<span class="icon">${icons.notes}</span><span class="bl">notes</span>`);
+  // opens the mobile HUD sheet — labelled for whatever the sheet holds
+  // ("notes" for accounts, "stats" for the notes-less collection reel)
+  const hudToggle = el(
+    "button",
+    "btn-ghost hud-toggle",
+    showNotes
+      ? `<span class="icon">${icons.notes}</span><span class="bl">notes</span>`
+      : `<span class="icon">${icons.chart}</span><span class="bl">stats</span>`
+  );
   hudToggle.addEventListener("click", () => hudWrap.classList.toggle("open"));
   headRight.append(hudToggle);
 
@@ -109,25 +126,34 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     const meter = el("div", "meter", "<i></i>");
     row.append(top, meter);
     statsCard.append(row);
-    statRows[key] = { num, bar: meter.firstElementChild };
+    statRows[key] = { row, num, bar: meter.firstElementChild };
   }
   statsCard.append(el("div", "rail-foot", "rounded down — counts move daily"));
+  // shown in place of the rows when a clip opts out of sharing its numbers
+  statsCard.append(el("div", "stats-hidden-note", `<span class="icon">${icons.lock}</span>performance hidden`));
   railL.append(statsCard);
+  hudWrap.append(railL);
 
-  // right rail: field notes
-  const railR = el("aside", "rail rail-right");
-  const notesCard = el("div", "rail-card");
-  notesCard.append(
-    el("div", "rail-head", `<span class="icon">${icons.notes}</span>field notes<span class="rail-idx notes-idx"></span>`)
-  );
-  const noteHook = el("div", "note-hook");
-  const noteParas = el("div", "note-paras");
-  const noteTags = el("div", "note-tags");
-  const noteMeta = el("div", "note-meta");
-  notesCard.append(noteHook, noteParas, noteTags, noteMeta);
-  railR.append(notesCard);
-
-  hudWrap.append(railL, railR);
+  // right rail: field notes — omitted for the notes-less collection reel
+  let noteHook, noteParas, noteTags, noteMeta;
+  if (showNotes) {
+    const railR = el("aside", "rail rail-right");
+    const notesCard = el("div", "rail-card");
+    notesCard.append(
+      el("div", "rail-head", `<span class="icon">${icons.notes}</span>field notes<span class="rail-idx notes-idx"></span>`)
+    );
+    noteHook = el("div", "note-hook");
+    noteParas = el("div", "note-paras");
+    noteTags = el("div", "note-tags");
+    noteMeta = el("div", "note-meta");
+    notesCard.append(noteHook, noteParas, noteTags, noteMeta);
+    railR.append(notesCard);
+    hudWrap.append(railR);
+  } else {
+    // collection reel has no notes — keep an empty right rail so the phone
+    // stays centered like the main pages (card on the left, open gap right)
+    hudWrap.append(el("aside", "rail rail-right rail-spacer"));
+  }
 
   // the phone
   const scene = el("div", "phone-scene");
@@ -203,7 +229,7 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   /* ------------------------------------------------------- filmstrip */
   const strip = el("div", "filmstrip");
   const scroll = el("div", "strip-scroll");
-  const frames = account.videos.map((v, i) => {
+  const frames = videos.map((v, i) => {
     const f = el("button", "frame");
     f.dataset.cursor = "link";
     f.innerHTML = `
@@ -280,11 +306,12 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
       bufSoon(); // a slow first load counts too
     } else {
       const ph = el("div", "static");
+      const dir = `${account.id}/${collection ? collection.id + "/" : ""}`;
       ph.innerHTML = `
         <div class="static-inner">
           <span class="icon">${icons.play}</span>
           <div class="l1">awaiting footage</div>
-          <div class="l2">public/videos/${account.id}/${video.id}.mp4</div>
+          <div class="l2">public/videos/${dir}${video.id}.mp4</div>
         </div>`;
       media.append(ph);
     }
@@ -307,27 +334,34 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     fit.append(wrap);
     layer.append(fit);
 
-    // tiktok-style overlay (portrait only)
+    // tiktok-style overlay (portrait only). hidden-stats clips keep the
+    // action glyphs but drop their counts; a null metric is omitted entirely
+    // so only the present one shows
+    const act = (icon, v) => {
+      if (video.statsHidden) return `<div class="sui-act"><span class="icon">${icon}</span></div>`;
+      if (v == null) return "";
+      return `<div class="sui-act"><span class="icon">${icon}</span><span>${fmtApprox(v)}</span></div>`;
+    };
     const ui = el("div", "screen-ui");
     ui.innerHTML = `
       <div class="sui-top"><span>following</span><span class="on">for you</span></div>
       <div class="sui-actions">
-        <div class="sui-act"><span class="icon">${icons.play}</span><span>${fmtApprox(video.stats.views)}</span></div>
-        <div class="sui-act"><span class="icon">${icons.heart}</span><span>${fmtApprox(video.stats.likes)}</span></div>
+        ${act(icons.play, video.stats.views)}
+        ${act(icons.heart, video.stats.likes)}
       </div>
       <div class="sui-caption">
-        <div class="h">${account.handle}</div>
-        <div class="t">${video.title} — ${video.hook}</div>
+        <div class="h">${account.handle}${collection ? ` · ${collection.label}` : ""}</div>
+        <div class="t">${video.title}${video.hook ? ` — ${video.hook}` : ""}</div>
       </div>`;
     layer.append(ui);
     return layer;
   }
 
   function setVideo(next, instant = false) {
-    next = clamp(next, 0, account.videos.length - 1);
+    next = clamp(next, 0, videos.length - 1);
     if (switching || (currentLayer && next === idx && !instant)) return;
     const dir = next >= idx ? "next" : "prev";
-    const video = account.videos[next];
+    const video = videos[next];
     idx = next;
 
     // vertical footage has no landscape mode: turn the phone back if
@@ -381,24 +415,46 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
     updateHud(video);
     frames.forEach((f, i) => f.classList.toggle("active", i === idx));
     frames[idx].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-    headIdx.innerHTML = `<b>${pad2(idx + 1)}</b> / ${pad2(account.videos.length)}`;
-    history.replaceState(null, "", `#/a/${account.id}/${idx}`);
+    headIdx.innerHTML = `<b>${pad2(idx + 1)}</b> / ${pad2(videos.length)}`;
+    history.replaceState(
+      null,
+      "",
+      collection ? `#/a/${account.id}/c/${encodeURIComponent(collection.id)}/${idx}` : `#/a/${account.id}/${idx}`
+    );
   }
 
   function updateHud(video) {
     cancels.splice(0).forEach((c) => c());
     view.querySelector(".stats-idx").textContent = pad2(idx + 1);
-    view.querySelector(".notes-idx").textContent = pad2(idx + 1);
 
-    for (const key of Object.keys(STAT_LABELS)) {
-      const value = video.stats[key] || 0;
-      cancels.push(countUp(statRows[key].num, value, { format: fmtApprox }));
-      statRows[key].bar.style.width = `${clamp((value / STAT_SCALE[key]) * 100, 4, 100)}%`;
+    // the performance card blanks to "hidden" when a clip opts out of numbers
+    statsCard.classList.toggle("stats-hidden", !!video.statsHidden);
+    if (video.statsHidden) {
+      for (const key of Object.keys(STAT_LABELS)) {
+        statRows[key].row.style.display = "";
+        statRows[key].num.textContent = "hidden";
+        statRows[key].bar.style.width = "0%";
+      }
+    } else {
+      for (const key of Object.keys(STAT_LABELS)) {
+        const value = video.stats[key];
+        // a null/absent metric is dropped entirely — the other still shows
+        if (value == null) {
+          statRows[key].row.style.display = "none";
+          continue;
+        }
+        statRows[key].row.style.display = "";
+        cancels.push(countUp(statRows[key].num, value, { format: fmtApprox }));
+        statRows[key].bar.style.width = `${clamp((value / STAT_SCALE[key]) * 100, 4, 100)}%`;
+      }
     }
 
+    // collection clips are title-only — nothing below runs for them
+    if (!showNotes) return;
+    view.querySelector(".notes-idx").textContent = pad2(idx + 1);
     cancels.push(typeText(noteHook, video.hook, { speed: 18 }));
     noteParas.innerHTML = "";
-    video.thoughts.forEach((t, i) => {
+    (video.thoughts || []).forEach((t, i) => {
       const p = el("p", null, t);
       p.style.animationDelay = `${0.35 + i * 0.18}s`;
       noteParas.append(p);
@@ -502,7 +558,7 @@ export function renderViewer(root, { account, startIndex, onBack, onOpenAccount 
   on(window, "keydown", (e) => {
     if (e.key === "ArrowRight" || e.key === "ArrowDown") setVideo(idx + 1);
     else if (e.key === "ArrowLeft" || e.key === "ArrowUp") setVideo(idx - 1);
-    else if ((e.key === "r" || e.key === "R") && isHorizontal(account.videos[idx]))
+    else if ((e.key === "r" || e.key === "R") && isHorizontal(videos[idx]))
       setLandscape(!landscape, true);
     else if (e.key === "m" || e.key === "M") muteBtn.click();
     else if (e.key === " ") {

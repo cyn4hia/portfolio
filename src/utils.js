@@ -63,8 +63,9 @@ export function typeText(node, text, { speed = 28 } = {}) {
 }
 
 // GitHub Pages serves the site from a sub-path, so asset URLs must stay
-// relative — tolerate a leading "/" in the data file
-export const assetUrl = (p) => p.replace(/^\//, "");
+// relative. Tolerate two common slips in the data file: a leading "/", and a
+// "public/" prefix (Vite serves public/ at the root, so it must be dropped).
+export const assetUrl = (p) => p.replace(/^\/?public\//, "").replace(/^\//, "");
 
 export function formatDate(iso) {
   const d = new Date(iso + "T00:00:00");

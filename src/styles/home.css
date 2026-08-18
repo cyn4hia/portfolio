@@ -6,7 +6,7 @@
 }
 
 /* fold one: everything that used to be the homepage, sized to the viewport
-   so the reel wall waits just below the fold */
+   with the profile (and its content lanes) scrolling within it */
 .home-fold {
   position: relative;
   z-index: 2;
@@ -365,14 +365,11 @@
   margin-top: 12px;
 }
 
-/* brands the account has worked with */
+/* brands the account has worked with — rides in the actions row */
 .profile-brands {
   display: flex;
   align-items: baseline;
   gap: 16px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
 }
 .brands-label {
   font-family: var(--font-mono);
@@ -403,7 +400,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 14px 22px;
   margin-top: 18px;
 }
 .btn-primary { white-space: nowrap; }
@@ -444,13 +441,6 @@
   to { transform: translateX(120%); }
 }
 .btn-primary .icon { width: 15px; height: 15px; }
-.profile-count {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--fg-faint);
-  text-transform: uppercase;
-}
 
 /* mini video grid — 16:9 frames, same shape as the footage */
 .profile-grid {
@@ -486,8 +476,7 @@
 }
 /* a micro-meteor fires once across the tile on hover — every streak on the
    site shares the same left-and-down heading */
-.gtile::after,
-.poster::after {
+.gtile::after {
   content: "";
   position: absolute;
   top: 14%;
@@ -500,8 +489,7 @@
   transform: rotate(-28deg);
   pointer-events: none;
 }
-.gtile:hover::after,
-.poster:hover::after {
+.gtile:hover::after {
   animation: micro-meteor 0.5s ease-out;
 }
 @keyframes micro-meteor {
@@ -603,8 +591,87 @@
   font-size: 9px;
   color: var(--fg-faint);
 }
+/* --------------------------------------------------- content buttons */
+/* motion / anime / ai — one button per content category, shown on the
+   editing account only. a compact row under the featured grid; each opens
+   that category's reel. the outlined display label fills in on hover,
+   echoing the site's marquee type */
+.collections {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.collection-btn {
+  --mmx: -150px;
+  --mmy: 80px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(-45deg, transparent 0 7px, rgba(255, 255, 255, 0.015) 7px 14px),
+    linear-gradient(160deg, var(--panel-2), var(--bg) 82%);
+  text-align: left;
+  transition: transform 0.3s var(--ease-out), border-color 0.3s ease;
+  animation: tile-in 0.42s var(--ease-out) both;
+}
+.collection-btn:hover {
+  transform: translateY(-4px);
+  border-color: var(--line-2);
+}
+/* shares the grid tiles' micro-meteor streak on hover */
+.collection-btn::after {
+  content: "";
+  position: absolute;
+  top: 16%;
+  right: -70px;
+  width: 70px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(244, 244, 245, 0.75), rgba(244, 244, 245, 0));
+  opacity: 0;
+  transform: rotate(-28deg);
+  pointer-events: none;
+}
+.collection-btn:hover::after {
+  animation: micro-meteor 0.5s ease-out;
+}
+.cbtn-name {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--fg-faint);
+  transition: color 0.3s ease, -webkit-text-stroke-color 0.3s ease;
+}
+.collection-btn:hover .cbtn-name {
+  color: var(--fg);
+  -webkit-text-stroke-color: var(--fg);
+}
+.cbtn-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  transition: color 0.3s ease;
+}
+.collection-btn:hover .cbtn-meta { color: var(--fg-dim); }
+.cbtn-meta .icon { width: 12px; height: 12px; }
 
-/* footer hint — now also the reel's scroll cue */
+/* footer hint — now also the profile's scroll cue */
 .home-hint {
   position: absolute;
   bottom: 20px;
@@ -746,12 +813,12 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
-/* the portrait's row soaks up all free height; the circle fills it, so the
-   picture sizes itself to however much room the text leaves. the padding is
+/* the card is content-sized now, so the portrait row takes a fixed height
+   rather than absorbing free space; the circle fills it, and the padding is
    the constant breathing distance to the text above and below */
 .about-avatar-wrap {
-  flex: 1 1 0;
-  min-height: 64px;
+  flex: none;
+  height: 172px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -817,294 +884,6 @@
 }
 .afact .af-v { color: var(--fg-dim); }
 
-/* ================================================================ the reel */
-/* fold two: every project as a seeded constellation poster */
-.wall {
-  position: relative;
-  z-index: 2;
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 24px 28px 32px;
-}
-.wall-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 18px 28px;
-  margin-bottom: 26px;
-}
-.wall-eyebrow {
-  flex-basis: 100%;
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-}
-.wall-title {
-  font-family: var(--font-display);
-  font-size: clamp(44px, 7vw, 110px);
-  line-height: 0.94;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  color: transparent;
-  -webkit-text-stroke: 1px #1b1b20;
-}
-.wall-filters {
-  display: flex;
-  gap: 8px;
-  margin-left: auto;
-  padding-bottom: 12px;
-}
-.fchip {
-  transition: color 0.25s ease, border-color 0.25s ease;
-}
-.fchip:hover { color: var(--fg-dim); }
-.fchip.active {
-  border-color: var(--fg);
-  color: var(--fg);
-}
-
-.wall-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-}
-
-.poster {
-  --mmx: -220px;
-  --mmy: 117px;
-  position: relative;
-  aspect-ratio: 16 / 9;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  background: linear-gradient(160deg, var(--panel-2), var(--bg) 80%);
-  text-align: left;
-  opacity: 0;
-  transition: transform 0.35s var(--ease-out), border-color 0.3s ease, box-shadow 0.35s ease;
-}
-.wall.on .poster {
-  opacity: 1;
-  animation: poster-in 0.55s var(--ease-out) both;
-}
-@keyframes poster-in {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-}
-/* !important so the later .poster.vault display:flex can never resurrect it */
-.poster.hide { display: none !important; }
-.poster:hover {
-  transform: translateY(-6px);
-  border-color: var(--line-2);
-  box-shadow: 0 20px 50px -30px rgba(244, 244, 245, 0.15);
-}
-
-/* footage slot: frozen static that only crackles while you hover it */
-.poster-static {
-  position: absolute;
-  inset: 0;
-  opacity: 0.6;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
-}
-.poster:hover .poster-static {
-  animation: poster-jitter 0.4s steps(3) infinite;
-}
-@keyframes poster-jitter {
-  0% { background-position: 0 0; }
-  50% { background-position: 8px -6px; }
-  100% { background-position: -6px 8px; }
-}
-.poster-media {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.85;
-}
-/* cover art is the resting face of the card; the muted video preview
-   fades in over it on hover */
-.poster-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.82;
-  transition: opacity 0.3s ease;
-}
-.poster-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(6, 6, 7, 0.5), transparent 32%, transparent 56%, rgba(6, 6, 7, 0.88));
-  pointer-events: none;
-}
-.poster.has-cover .constellation,
-.poster.has-cover .poster-num {
-  display: none;
-}
-.poster.has-cover .poster-media {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.poster.has-cover:hover .poster-media {
-  opacity: 0.95;
-}
-.poster.has-cover:hover .poster-img {
-  opacity: 1;
-}
-.poster-badge {
-  position: absolute;
-  top: 34px;
-  left: 12px;
-  font-size: 8px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--fg-dim);
-  border: 1px solid var(--line-2);
-  border-radius: 999px;
-  padding: 3px 8px;
-  background: rgba(10, 10, 11, 0.6);
-}
-
-/* giant stroked index numeral, cropped by the frame — echoes the marquee */
-.poster-num {
-  position: absolute;
-  top: -18px;
-  right: 6px;
-  font-family: var(--font-display);
-  font-size: 108px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  color: transparent;
-  -webkit-text-stroke: 1px #26262c;
-  pointer-events: none;
-}
-
-/* the constellation — edges draw themselves in on hover, nodes twinkle */
-.poster .constellation {
-  position: absolute;
-  inset: 0;
-}
-.poster .constellation line {
-  stroke: rgba(244, 244, 245, 0.18);
-  stroke-width: 0.5;
-  transition: stroke-dashoffset 0.4s var(--ease-out);
-}
-.poster:hover .constellation line {
-  stroke-dashoffset: 0;
-}
-.poster .constellation .cnode {
-  fill: #f4f4f5;
-}
-.poster:hover .constellation .cnode {
-  animation: node-tw 0.9s ease-in-out infinite alternate;
-}
-@keyframes node-tw {
-  to { opacity: 0.25; }
-}
-
-/* hairline rule with the account credit, keeps the mixed wall legible */
-.poster-rule {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 8px 12px 6px;
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-  border-bottom: 1px solid rgba(244, 244, 245, 0.05);
-  background: linear-gradient(180deg, rgba(10, 10, 11, 0.5), transparent);
-}
-
-/* film-title credit block */
-.poster-credit {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 10px;
-  display: block;
-}
-.pc-title {
-  display: block;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pc-line {
-  display: block;
-  margin-top: 4px;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-}
-.pc-line b {
-  font-weight: 400;
-  color: var(--fg-faint);
-  transition: color 0.3s ease;
-}
-.poster:hover .pc-line b { color: var(--fg); }
-
-/* footage shows through on hover once real video exists */
-.poster.has-video:hover .poster-num,
-.poster.has-video:hover .constellation {
-  opacity: 0.25;
-  transition: opacity 0.3s ease;
-}
-
-/* the 140ms rubber-stamp invert before the storm fires */
-.poster.stamp {
-  background: var(--fg);
-  border-color: var(--fg);
-  transition: none;
-}
-.poster.stamp .pc-title,
-.poster.stamp .pc-line,
-.poster.stamp .pc-line b,
-.poster.stamp .poster-rule { color: var(--bg); }
-.poster.stamp .poster-rule { background: none; }
-.poster.stamp .constellation,
-.poster.stamp .poster-static,
-.poster.stamp .poster-media,
-.poster.stamp .poster-img,
-.poster.stamp .poster-scrim,
-.poster.stamp .poster-num { opacity: 0; }
-
-/* the vault — mirrors the ghost tab */
-.poster.vault {
-  border-style: dashed;
-  background: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: var(--fg-faint);
-}
-.poster.vault .icon {
-  width: 15px;
-  height: 15px;
-  flex: none;
-}
-.vault-l {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-.poster.vault.deny {
-  animation: deny 0.4s ease;
-}
-
 /* keep the whole window inside shorter viewports */
 @media (max-height: 800px) {
   .home-fold { padding: 68px 24px 24px; min-height: calc(100vh - 90px); min-height: calc(100svh - 90px); }
@@ -1113,7 +892,6 @@
   .profile-handle { font-size: 24px; }
   .pstat .pstat-num { font-size: 20px; }
   .profile-bio { margin-top: 12px; font-size: 13.5px; }
-  .profile-brands { margin-top: 12px; padding-top: 10px; }
   .brand { font-size: 13px; }
   .profile-actions { margin-top: 14px; }
   .btn-primary { padding: 11px 20px; font-size: 12px; }
@@ -1158,10 +936,19 @@
   }
   .profile-brands { justify-content: center; }
   .brands-row { justify-content: center; }
-  .profile-actions { justify-content: center; }
+  /* worked-with stays ABOVE the button on mobile */
+  .profile-actions {
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
   .profile-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .gtile .gtile-title { bottom: 22px; font-size: 10.5px; }
   .gtile .spark { display: none; }
+  .collections { gap: 8px; }
+  .collection-btn { padding: 13px 12px 12px; gap: 8px; }
+  .cbtn-meta { letter-spacing: 0.06em; gap: 5px; white-space: nowrap; }
   /* keep the about button reachable on touch — hide just the status */
   .home-corner.tr .pulse,
   .home-corner.tr .status-l { display: none; }
@@ -1177,8 +964,6 @@
   .about-card.open { transform: translateY(0); }
   /* the sheet has auto height, so the portrait row gets a fixed one */
   .about-avatar-wrap { flex: none; height: 96px; }
-  .wall { padding: 16px 14px 28px; }
-  .wall-filters { margin-left: 0; padding-bottom: 4px; }
 }
 
 @media (max-width: 480px) {
