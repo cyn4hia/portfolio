@@ -74,8 +74,8 @@ export const accounts = [
     hidden: false,
     bio: "after effects design and creation",
     stats: {
-      followers: 1500,
-      likes: 230000,
+      followers: 1800,
+      likes: 360000,
       views: 40000000,
     },
     highlights: ["Motion graphics", "20 million views in 1 month", "Diverse content"],
@@ -214,7 +214,7 @@ export const accounts = [
           {
             id: "lover-boy",
             title: "Lover Boy Triology",
-            src: "public/videos/main/anime/loverboy-post.MP4",
+            src: "public/videos/main/anime/loverboy-post.mp4",
             orientation: "horizontal",
             poster: null,
             duration: "0:15",
@@ -311,7 +311,7 @@ export const accounts = [
           {
             id: "opus5-leak",
             title: "Opus5 Coming Soon",
-            src: "public/videos/main/ai/opus5-leak.mp4",
+            src: "public/videos/main/ai/opus5-leak.MP4",
             orientation: "horizontal",
             poster: null,
             duration: "0:21",
