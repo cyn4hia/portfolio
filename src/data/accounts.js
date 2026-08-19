@@ -230,7 +230,6 @@ export const accounts = [
             poster: null,
             duration: "0:07",
             postedAt: "2026-06-01",
-            statsHidden: true,
             stats: { views: 27000, likes: 4800 },
             tags: ["red string", "lovers"],
           },
